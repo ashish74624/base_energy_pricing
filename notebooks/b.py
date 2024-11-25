@@ -14,7 +14,7 @@ import math
 import os
 import re
 import missingno as msno
-consumptions = pd.read_csv('../data/raw/energy/household_power_consumption.zip', sep =';', header=0, na_values='?', 
+consumptions = pd.read_csv(r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\raw\energy\household_power_consumption.zip", sep =';', header=0, na_values='?', 
                            dtype={'Date':str, 'Time':str, 'Global_active_power':np.float64}, 
                            infer_datetime_format=False)
 
@@ -120,14 +120,14 @@ target_correlations = correlation_matrix['total_consumption'].drop('total_consum
 highly_correlated_features = target_correlations[target_correlations > threshold]
 print("Most correlated features with 'total_consumption':")
 print(highly_correlated_features.sort_values(ascending=False))
-french_holidays_df = pd.read_csv("../data/raw/holidays/jours_feries_metropole.csv",
+french_holidays_df = pd.read_csv(r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\raw\holidays\jours_feries_metropole.csv",
                          parse_dates=['date'])
 french_holidays_df.head(3)
 start_date = french_holidays_df.date.min()
 end_date = french_holidays_df.date.max()
 print(f'Data spans from {str(start_date)[:10]} to {str(end_date)[:10]}')
 weather_dictionary = {}
-data_directory = "../data/raw/weather/"
+data_directory = r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\raw\weather"
 for file_name in os.listdir(data_directory):
     if file_name.endswith(".csv"):
         weather_dictionary[file_name] = pd.read_csv(os.path.join(data_directory, file_name),
@@ -193,4 +193,4 @@ print("Most correlated features with 'total_consumption':")
 for feature in highly_correlated_features.index:
     print(" " + feature)
 weather_and_consumption_df.head(1)
-weather_and_consumption_df.to_csv('../data/processed/weather_and_consumption.csv', index=True)
+weather_and_consumption_df.to_csv(r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\processed\weather_and_consumption.csv", index=True)

@@ -9,7 +9,7 @@ from tqdm import tqdm
 warnings.filterwarnings('ignore')
 color_pal = sns.color_palette("husl", 9)
 plt.style.use('fivethirtyeight')
-weather_and_consumption_df = pd.read_csv('../data/processed/weather_and_consumption.csv', index_col=0, parse_dates=True)
+weather_and_consumption_df = pd.read_csv(r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\processed\weather_and_consumption.csv", index_col=0, parse_dates=True)
 print("Loaded dataset preview:")
 print(weather_and_consumption_df.head(1))  
 class BaseEnergyModel:
