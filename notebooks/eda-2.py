@@ -9,11 +9,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns; color_pal = sns.color_palette("husl", 9); plt.style.use('fivethirtyeight')
 
 # Utilities
-from datetime import datetime, date
-import math
+from datetime import datetime, timedelta
 import os
 import re
-import missingno as msno
 
 # Load and preprocess energy data
 consumptions = pd.read_csv(r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\raw\energy\household_power_consumption.zip", 
@@ -42,7 +40,12 @@ consumptions.drop(columns=['date', 'time'], inplace=True)
 
 # Resample daily data
 consumptions_df = consumptions.resample('D').sum()
-consumptions_df.tail(3)
+
+# Adjust years to range from 2020 to 2024
+start_date = datetime(2020, 1, 1)
+end_date = datetime(2024, 12, 31)
+date_range = pd.date_range(start=start_date, end=end_date, freq='D')
+consumptions_df.index = date_range[:len(consumptions_df)]
 
 # Data inspection
 print(consumptions_df.shape)
@@ -55,9 +58,6 @@ plt.xlabel('Date')
 plt.ylabel('Total Consumption (kWh)')
 plt.plot(consumptions_df['total_consumption'])
 plt.show()
-
-# **Skip Missing Value Visualization for Electricity Data**
-# msno.matrix(consumptions_df)
 
 # Function to calculate the rho association metric
 def calculate_rho(grouped_data, overall_mean):
@@ -117,79 +117,5 @@ for i, (category, labels) in enumerate(zip(categories, category_labels)):
 plt.tight_layout()
 plt.show()
 
-# Data inspection and weather processing
-correlation_matrix = consumptions_df.corr()
-
-# **Skip Correlation Matrix Heatmap**
-# plt.figure(figsize=(6, 6))
-# sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
-# plt.title("Correlation Matrix of Features")
-# plt.show()
-
-# Target correlations
-threshold = 0.5
-target_correlations = correlation_matrix['total_consumption'].drop('total_consumption', axis=0).abs()
-highly_correlated_features = target_correlations[target_correlations > threshold]
-print("Most correlated features with 'total_consumption':")
-print(highly_correlated_features.sort_values(ascending=False))
-
-# Process French holidays
-french_holidays_df = pd.read_csv(r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\raw\holidays\jours_feries_metropole.csv",
-                                 parse_dates=['date'])
-french_holidays_df.head(3)
-
-# Load and process weather data
-weather_dictionary = {}
-data_directory = r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\raw\weather"
-for file_name in os.listdir(data_directory):
-    if file_name.endswith(".csv"):
-        weather_dictionary[file_name] = pd.read_csv(os.path.join(data_directory, file_name),
-                                                    parse_dates=['datetime', 'sunrise', 'sunset'],
-                                                    index_col='datetime')
-print(weather_dictionary.keys())
-weather_df = pd.concat([weather_df for df_name, weather_df in weather_dictionary.items()], axis=0)
-
-# **Skip Missing Value Visualization for Weather Data**
-# msno.matrix(weather_df)
-# plt.figure(figsize=(5, 3))
-# plt.show()
-
-# Functions to preprocess weather data
-def clean_string(s):
-    return re.sub(r'[^a-zA-Z0-9\s]', '', s.replace(' ', '_')).lower()
-
-def calculate_day_length(df, sunrise_col='sunrise', sunset_col='sunset'):
-    df[sunrise_col] = pd.to_datetime(df[sunrise_col], format='%H:%M:%S').dt.time
-    df[sunset_col] = pd.to_datetime(df[sunset_col], format='%H:%M:%S').dt.time
-    df['day_length'] = ((pd.to_datetime(df[sunset_col].astype(str)) - pd.to_datetime(df[sunrise_col].astype(str))).dt.total_seconds()) / 3600.0
-    return df.drop([sunrise_col, sunset_col], axis=1)
-
-def preprocess_weather_data(df, start_date, end_date, columns_to_keep, column_to_encode):
-    df.sort_index(inplace=True)
-    df_selected = df[columns_to_keep].copy()
-    df_filtered = df_selected[(df_selected.index >= start_date) & (df_selected.index <= end_date)].copy()
-    df_filtered[column_to_encode] = df_filtered[column_to_encode].apply(clean_string)
-    dummies = pd.get_dummies(df_filtered[column_to_encode], prefix=column_to_encode)
-    df_encoded = pd.concat([df_filtered, dummies], axis=1).drop(column_to_encode, axis=1)
-    return calculate_day_length(df_encoded)
-
-columns_to_keep = ['tempmax', 'tempmin', 'temp', 'feelslikemax', 'feelslikemin', 'feelslike', 
-                   'dew', 'humidity', 'precip', 'precipprob', 'precipcover', 'snow', 'snowdepth', 
-                   'windgust', 'windspeed', 'winddir', 'sealevelpressure', 'cloudcover', 
-                   'visibility', 'sunrise', 'sunset', 'moonphase', 'conditions']
-start_date = '2006-12-16'
-end_date = '2010-11-26'
-column_to_encode = 'conditions'
-processed_weather_df = preprocess_weather_data(df=weather_df, 
-                                               start_date=start_date, 
-                                               end_date=end_date, 
-                                               columns_to_keep=columns_to_keep, 
-                                               column_to_encode=column_to_encode)
-
-# Merge weather and energy data
-weather_and_consumption_df = pd.merge(consumptions_df, processed_weather_df, left_index=True, right_index=True)
-french_holidays_set = set(french_holidays_df.date)
-weather_and_consumption_df['is_holiday'] = weather_and_consumption_df.index.isin(french_holidays_set)
-
-# Save the merged dataset
-weather_and_consumption_df.to_csv(r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\processed\weather_and_consumption.csv", index=True)
+# Save the adjusted dataset
+consumptions_df.to_csv(r"C:\Users\ashis\OneDrive\Desktop\Monthly-Daily-Energy-Forecasting-Docker-API\data\processed\adjusted_consumptions.csv", index=True)

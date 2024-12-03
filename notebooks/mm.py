@@ -27,7 +27,7 @@ train_df.index = train_df.index + timedelta(days=14 * 365)
 test_df.index = test_df.index + timedelta(days=14 * 365)
 threshold_shifted = (pd.to_datetime(threshold) + timedelta(days=14 * 365)).strftime('%Y-%m-%d')
 
-# 1. Data Train/Test Split Graph (already correct in previous code)
+# 1. Data Train/Test Split Graph
 trace1 = go.Scatter(x=train_df.index, y=train_df[TARGET], mode='lines', name='Training Set')
 trace2 = go.Scatter(x=test_df.index, y=test_df[TARGET], mode='lines', name='Test Set')
 vline = go.layout.Shape(
@@ -48,34 +48,7 @@ layout = go.Layout(
 fig = go.Figure(data=[trace1, trace2], layout=layout)
 fig.show()
 
-# 2. Real Data and Predictions Comparison (original functionality retained with shifted dates)
-test_df['RandomForest_Prediction'] = test_df[TARGET] * 0.9  # Mock predictions
-test_df['XGBoost_Prediction'] = test_df[TARGET] * 1.1       # Mock predictions
-df_final = df.merge(
-    test_df[['RandomForest_Prediction', 'XGBoost_Prediction']],
-    how='left', left_index=True, right_index=True
-)
-
-train_data = go.Scatter(x=train_df.index, y=train_df[TARGET], mode='lines', name='Train Data', line=dict(color='Blue'))
-test_data = go.Scatter(x=test_df.index, y=test_df[TARGET], mode='lines', name='Test Data', line=dict(color='ForestGreen'))
-random_forest_predictions = go.Scatter(x=test_df.index, y=test_df['RandomForest_Prediction'], mode='markers', name='Random Forest Predictions', marker=dict(color='Red'))
-xgboost_predictions = go.Scatter(x=test_df.index, y=test_df['XGBoost_Prediction'], mode='markers', name='XGBoost Predictions', marker=dict(color='Orange'))
-
-layout = go.Layout(
-    title="Real Data and Predictions Comparison",
-    xaxis=dict(
-        title='Date',
-        tickformat='%b %Y',
-        dtick="M6",
-        tickangle=45
-    ),
-    yaxis=dict(title='Total Consumption/Predictions'),
-    legend_title='Legend'
-)
-fig = go.Figure(data=[train_data, test_data, random_forest_predictions, xgboost_predictions], layout=layout)
-fig.show()
-
-# 3. 7-Fold Time Series Split on Train Data
+# 2. 7-Fold Time Series Split on Train Data
 tss = TimeSeriesSplit(n_splits=7, test_size=30)
 fig, axs = plt.subplots(7, 1, figsize=(20, 15), sharex=True)
 color_palette = plt.get_cmap('Set1')
